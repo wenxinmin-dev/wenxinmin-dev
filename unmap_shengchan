@@ -1,0 +1,15 @@
+#在unmapping占比的比例高的时候，需要对引物下机的unmmapping进行拆分
+#sample中为一列样本名称
+#第一步提取unmapping的序列,在项目路径下运行
+bash /data/test/wenxinmin/tools/unmap/bam.sh 
+bash ubam.sh
+#第二步拆分这些unmapping的序列是由那些序列组成的
+#准备两个文件，首先是其中uesprimer.xls两列（f端和r端的反向互补,注意有表头）、fapath中fa序列(f和r的反向互补序列分别放在文件中)
+#例子：/data/test/wenxinmin/tools/unmap/uesprimer.xls 、/data/test/wenxinmin/tools/unmap/fapath_v3.0两个准备文件
+cd dimer_analysis
+cp /data/test/wenxinmin/tools/unmap/uesprimer.xls ./
+cp ../sample ./ 
+python /data/test/wenxinmin/tools/unmap/primer_fqcheck.py --sample sample --primer uesprimer.xls --fapath /data/test/wenxinmin/tools/unmap/fapath_v3.0
+#提交每个样本下的step1_fqcheck*.sh脚本
+ls */step1_fqcheck*.sh |xargs -i sh -c 'qsub -cwd -V {}' 
+#######一个项目的示例/data/test/wenxinmin/work/TJ200B1027_20230926_t/
