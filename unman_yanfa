@@ -1,0 +1,18 @@
+cut -f3,4 primer.xls  |seqkit tab2fx |seqkit seq -r -p  |seqkit fx2tab |awk -F"\t" '{print $1"_rv\t"$2}' >rv
+echo -e "FR_ID\tFP_Seq\tR_rv\t R_rv_seq" >uesprimer.xls
+cut -f1,2 primer.xls  |paste - rv  >>uesprimer.xls
+mkdir -p fapath && cd fapath 
+sed '1d' ../uesprimer.xls |while read fname fseq rname rseq ;do echo -e ">$fname\n$fseq" >$fname.fa ;echo -e ">$rname\n$rseq" >$rname.fa ;done
+cd -
+
+bash /nas/piptest/wenxinmin/tools/unmap/bam.sh
+bash ubam.sh
+cd dimer_analysis 
+cp ../uesprimer.xls ./ 
+cp ../sample ./
+python /nas/piptest/wenxinmin/tools/unmap/primer_fqcheck.py --sample sample --primer uesprimer.xls --fapath /nas/piptest/wenxinmin/work/tngs_panel/work/GZ200F979_20231127/fapath 
+ls */step1_fqcheck*.sh |xargs -i sh -c 'qsub -cwd -V {}'
+
+for sample  in `cat sample`;do cd $sample ;seqkit fx2tab *unmap.fq |awk -F"\t" 'NR==FNR{a[$3]=$2}NR>FNR{print $1"\t"a[$1]"\t"$2}' *count.txt - |sort -n -k2 -r >${sample}umap.txt ;cd -;done 
+for sample in `cat sample`;do cat $sample/dan*xls |sort -k3 -n -r >>dan_all.xls ;done
+for sample in `cat sample`;do cat $sample/duo*xls |sort -k3 -n -r >>duo_all.xls ;done
